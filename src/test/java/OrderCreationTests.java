@@ -83,6 +83,7 @@ public class OrderCreationTests extends AbstractOrderCreationTest {
     }
 
     // проверить поля ответа при успехе
+    @Step("Check successfull response body")
     public void checkSuccessfullResponseBody(Response response) {
         OrderResponse responseBody = response.as(OrderResponse.class);
         Assert.assertFalse(responseBody.getName().isEmpty());
@@ -91,6 +92,7 @@ public class OrderCreationTests extends AbstractOrderCreationTest {
     }
 
     // проверить поля ответа при ошибке
+    @Step("Check error response body")
     public void checkErrorResponseBody(Response response, String expectedError) {
         ErrorResponse responseBody = response.as(ErrorResponse.class);
         Assert.assertFalse(responseBody.isSuccess());
