@@ -43,7 +43,9 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
         User newUserData = prepareNewUserData(newEmail, newPassword, newName, user);
         response = sendPatchAuthUser(newUserData, accessToken);
         compareResponseStatusCode(response,200);
-        checkSuccessfullResponseBody(response, newUserData);
+        compareResponseSuccessField(response, true);
+        compareResponseUserNameField(response, newUserData.getName());
+        compareResponseUserEmailField(response, newUserData.getEmail());
         if (newEmail != null || newPassword != null) {
             response = sendPostAuthLogin(new AuthData(newUserData.getEmail(), newUserData.getPassword()));
             compareResponseStatusCode(response, 200);
@@ -51,7 +53,8 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
         }
         response = sendGetAuthUser(accessToken);
         compareResponseStatusCode(response,200);
-        checkSuccessfullResponseBody(response, newUserData);
+        compareResponseUserNameField(response, newUserData.getName());
+        compareResponseUserEmailField(response, newUserData.getEmail());
     }
 
     @Test
@@ -61,7 +64,8 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
         User newUserData = prepareNewUserData(newEmail, newPassword, newName, user);
         response = sendPatchAuthUser(newUserData, null);
         compareResponseStatusCode(response,401);
-        checkErrorResponseBody(response, "You should be authorised");
+        compareResponseSuccessField(response, false);
+        compareResponseMessageField(response, "You should be authorised");
         if (newEmail != null || newPassword != null) {
             response = sendPostAuthLogin(new AuthData(newUserData.getEmail(), newUserData.getPassword()));
             compareResponseStatusCode(response, 401);
@@ -71,7 +75,8 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
         }
         response = sendGetAuthUser(accessToken);
         compareResponseStatusCode(response,200);
-        checkSuccessfullResponseBody(response, user);
+        compareResponseUserNameField(response, user.getName());
+        compareResponseUserEmailField(response, user.getEmail());
     }
 
     @Step("Compare response status code")
@@ -128,21 +133,24 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
         return response;
     }
 
-    // проверить поля ответа при успехе
-    @Step("Check successfull response body")
-    public void checkSuccessfullResponseBody(Response response, User user) {
-        UserData responseBody = response.as(UserData.class);
-        Assert.assertTrue(responseBody.isSuccess());
-        Assert.assertEquals(user.getName(), responseBody.getUser().getName());
-        Assert.assertEquals(user.getEmail().toLowerCase(), responseBody.getUser().getEmail());
+    @Step("Compare response user name field")
+    public void compareResponseUserNameField(Response response, String expectedName) {
+        Assert.assertEquals(expectedName, response.path("user.name").toString());
     }
 
-    // проверить поля ответа при ошибке
-    @Step("Check error response body")
-    public void checkErrorResponseBody(Response response, String expectedError) {
-        ErrorResponse responseBody = response.as(ErrorResponse.class);
-        Assert.assertFalse(responseBody.isSuccess());
-        Assert.assertEquals(expectedError, responseBody.getMessage());
+    @Step("Compare response user email field")
+    public void compareResponseUserEmailField(Response response, String expectedEmail) {
+        Assert.assertEquals(expectedEmail.toLowerCase(), response.path("user.email").toString());
+    }
+
+    @Step("Compare response body success field")
+    public void compareResponseSuccessField(Response response, boolean expectedSuccess) {
+        Assert.assertEquals(expectedSuccess, response.path("success"));
+    }
+
+    @Step("Compare response body message field")
+    public void compareResponseMessageField(Response response, String expectedMessage) {
+        Assert.assertEquals(expectedMessage, response.path("message"));
     }
 
     @Step("Send POST /api/auth/login")

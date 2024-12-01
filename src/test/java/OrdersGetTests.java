@@ -5,8 +5,8 @@ import jdk.jfr.Description;
 import org.junit.Assert;
 import org.junit.Test;
 import service.abstractions.AbstractOrdersGetTest;
-import service.json.ErrorResponse;
 import service.json.Ingredients;
+import service.json.Order;
 import service.json.OrdersResponse;
 
 import static io.restassured.RestAssured.given;
@@ -18,7 +18,16 @@ public class OrdersGetTests extends AbstractOrdersGetTest {
     public void orderGetWithTokenCheck200ResponseOnSuccess() {
         response = sendGetOrders(accessToken);
         compareResponseStatusCode(response,200);
-        checkSuccessfullResponseBody(response, ORDERS_NUM, INGREDIENTS);
+        compareResponseSuccessField(response, true);
+        checkResponseTotalFieldIsGreaterThanZero(response);
+        checkResponseTotalTodayFieldIsGreaterThanZero(response);
+        compareResponseOrdersFieldSize(response, ORDERS_NUM);
+        compareResponseOrdersFieldIngredients(response, INGREDIENTS);
+        checkResponseOrdersFieldOrder_idAreNotEmpty(response);
+        checkResponseOrdersFieldOrderStatusAreNotEmpty(response);
+        checkResponseOrdersFieldOrderNumberAreGreaterThanZero(response);
+        checkResponseOrdersFieldOrderCreatedAtAreNotEmpty(response);
+        checkResponseOrdersFieldOrderUpdatedAtAreNotEmpty(response);
     }
 
     @Test
@@ -27,7 +36,8 @@ public class OrdersGetTests extends AbstractOrdersGetTest {
     public void orderGetWithoutTokenCheck401ResponseOnSuccess() {
         response = sendGetOrders(null);
         compareResponseStatusCode(response,401);
-        checkErrorResponseBody(response, "You should be authorised");
+        compareResponseSuccessField(response, false);
+        compareResponseMessageField(response, "You should be authorised");
     }
 
     @Step("Send GET /api/orders")
@@ -50,30 +60,85 @@ public class OrdersGetTests extends AbstractOrdersGetTest {
         response.then().assertThat().statusCode(expectedStatusCode);
     }
 
-    @Step("Check successfull response body")
-    public void checkSuccessfullResponseBody(Response response, int expectedOrdersNum, Ingredients expectedIngredients) {
+    @Step("Compare response orders field size")
+    public void compareResponseOrdersFieldSize(Response response, int expectedOrdersNum) {
         OrdersResponse responseBody = response.as(OrdersResponse.class);
-        Assert.assertTrue(responseBody.isSuccess());
-        Assert.assertTrue(responseBody.getTotal() > 0);
-        Assert.assertTrue(responseBody.getTotalToday() > 0);
         Assert.assertEquals(expectedOrdersNum, responseBody.getOrders().size());
-        for (int i = 0; i < expectedOrdersNum; i++) {
-            Assert.assertEquals(expectedIngredients.getIngredients().size(), responseBody.getOrders().get(i).getIngredients().size());
-            for (int j = 0; j < expectedIngredients.getIngredients().size(); j++) {
-                Assert.assertTrue(responseBody.getOrders().get(i).getIngredients().contains(expectedIngredients.getIngredients().get(j)));
+    }
+
+    @Step("Check response total field greater than zero")
+    public void checkResponseTotalFieldIsGreaterThanZero(Response response) {
+        OrdersResponse responseBody = response.as(OrdersResponse.class);
+        Assert.assertTrue(responseBody.getTotal() > 0);
+    }
+
+    @Step("Check response totalToday field greater than zero")
+    public void checkResponseTotalTodayFieldIsGreaterThanZero(Response response) {
+        OrdersResponse responseBody = response.as(OrdersResponse.class);
+        Assert.assertTrue(responseBody.getTotalToday() > 0);
+    }
+
+    // проверить, что заказы содержат переданные ингредиенты
+    @Step("Compare ingredients in orders[].order.ingredients[] field")
+    public void compareResponseOrdersFieldIngredients(Response response, Ingredients expectedIngredients) {
+        OrdersResponse responseBody = response.as(OrdersResponse.class);
+        for (Order order : responseBody.getOrders()) {
+            for (int i = 0; i < expectedIngredients.getIngredients().size(); i++) {
+                Assert.assertTrue(order.getIngredients().contains(expectedIngredients.getIngredients().get(i)));
             }
-            Assert.assertFalse(responseBody.getOrders().get(i).get_id().isEmpty());
-            Assert.assertFalse(responseBody.getOrders().get(i).getStatus().isEmpty());
-            Assert.assertTrue(responseBody.getOrders().get(i).getNumber() > 0);
-            Assert.assertFalse(responseBody.getOrders().get(i).getCreatedAt().isEmpty());
-            Assert.assertFalse(responseBody.getOrders().get(i).getUpdatedAt().isEmpty());
         }
     }
 
-    @Step("Check error response body")
-    public void checkErrorResponseBody(Response response, String expectedError) {
-        ErrorResponse responseBody = response.as(ErrorResponse.class);
-        Assert.assertFalse(responseBody.isSuccess());
-        Assert.assertEquals(expectedError, responseBody.getMessage());
+    @Step("Check orders field orders[].order._id fields are not empty")
+    public void checkResponseOrdersFieldOrder_idAreNotEmpty(Response response) {
+        OrdersResponse responseBody = response.as(OrdersResponse.class);
+        for (Order order : responseBody.getOrders()) {
+            Assert.assertFalse(order.get_id().isEmpty());
+        }
     }
+
+    @Step("Check orders field orders[].order.status fields are not empty")
+    public void checkResponseOrdersFieldOrderStatusAreNotEmpty(Response response) {
+        OrdersResponse responseBody = response.as(OrdersResponse.class);
+        for (Order order : responseBody.getOrders()) {
+            Assert.assertFalse(order.getStatus().isEmpty());
+        }
+    }
+
+    @Step("Check orders field orders[].order.number fields are greater than zero")
+    public void checkResponseOrdersFieldOrderNumberAreGreaterThanZero(Response response) {
+        OrdersResponse responseBody = response.as(OrdersResponse.class);
+        for (Order order : responseBody.getOrders()) {
+            Assert.assertTrue(order.getNumber() > 0);
+        }
+    }
+
+    @Step("Check orders field orders[].order.createdAt fields are not empty")
+    public void checkResponseOrdersFieldOrderCreatedAtAreNotEmpty(Response response) {
+        OrdersResponse responseBody = response.as(OrdersResponse.class);
+        for (Order order : responseBody.getOrders()) {
+            Assert.assertFalse(order.getCreatedAt().isEmpty());
+        }
+    }
+
+    @Step("Check orders field orders[].order.updatedAt fields are not empty")
+    public void checkResponseOrdersFieldOrderUpdatedAtAreNotEmpty(Response response) {
+        OrdersResponse responseBody = response.as(OrdersResponse.class);
+        for (Order order : responseBody.getOrders()) {
+            Assert.assertFalse(order.getUpdatedAt().isEmpty());
+        }
+    }
+
+    @Step("Compare response body success field")
+    public void compareResponseSuccessField(Response response, boolean expectedSuccess) {
+        Assert.assertEquals(expectedSuccess, response.path("success"));
+    }
+
+    @Step("Compare response body message field")
+    public void compareResponseMessageField(Response response, String expectedMessage) {
+        Assert.assertEquals(expectedMessage, response.path("message").toString());
+    }
+
+
+
 }

@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import service.json.ErrorResponse;
 import service.json.User;
 
 import static io.restassured.RestAssured.given;
@@ -17,36 +16,34 @@ import static io.restassured.RestAssured.given;
 @RunWith(Parameterized.class)
 public class UserRegistrationParameterizedTests {
     private final User user;
-    private final int expectedStatus;
-    private final String expectedError;
+    private Response response;
 
-    public UserRegistrationParameterizedTests(User user, int expectedStatus, String expectedError) {
+    public UserRegistrationParameterizedTests(User user) {
         this.user = user;
-        this.expectedStatus = expectedStatus;
-        this.expectedError = expectedError;
     }
 
     @Parameterized.Parameters
     public static Object[][] dataForTest() {
         return new Object[][]{
-                { new User(null, "derP@r0l", "Иннокентий"), 403, "Email, password and name are required fields" },
-                { new User("failbox100500@qatestmail.su", null, "Boris"), 403, "Email, password and name are required fields" },
-                { new User("failbox500100@qatestmail.su", "derP@r0l", null), 403, "Email, password and name are required fields" },
+                { new User(null,                          "derP@r0l",   "Иннокентий")   },
+                { new User("failbox100500@qatestmail.su", null,         "Boris")        },
+                { new User("failbox500100@qatestmail.su", "derP@r0l",   null)           },
         };
     }
 
     @Before
     public void initTestData() {
         RestAssured.baseURI = "https://stellarburgers.nomoreparties.site";
+        response = sendPostAuthRegister(user);
     }
 
     @Test
     @DisplayName("Check status code and response body of POST /api/auth/register on registration error")
     @Description("Endpoint returns correct status code and response body if no email provided on registration")
     public void userRegistrationCheckResponseOnError() {
-        Response response = sendPostAuthRegister(user);
-        compareResponseStatusCode(response,expectedStatus);
-        checkErrorResponseBody(response, expectedError);
+        compareResponseStatusCode(response,403);
+        compareResponseSuccessField(response,false);
+        compareResponseMessageField(response, "Email, password and name are required fields");
     }
 
     @Step("Send POST /api/auth/register")
@@ -66,10 +63,13 @@ public class UserRegistrationParameterizedTests {
         response.then().assertThat().statusCode(expectedStatus);
     }
 
-    @Step("Check error response body")
-    public void checkErrorResponseBody(Response response, String expectedError) {
-        ErrorResponse responseBody = response.as(ErrorResponse.class);
-        Assert.assertFalse(responseBody.isSuccess());
-        Assert.assertEquals(expectedError, responseBody.getMessage());
+    @Step("Compare response body success field")
+    public void compareResponseSuccessField(Response response, boolean expectedSuccess) {
+        Assert.assertEquals(expectedSuccess, response.path("success"));
+    }
+
+    @Step("Compare response body message field")
+    public void compareResponseMessageField(Response response, String expectedMessage) {
+        Assert.assertEquals(expectedMessage, response.path("message").toString());
     }
 }

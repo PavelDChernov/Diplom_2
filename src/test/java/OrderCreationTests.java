@@ -6,7 +6,6 @@ import jdk.jfr.Description;
 import org.junit.Assert;
 import org.junit.Test;
 import service.abstractions.AbstractOrderCreationTest;
-import service.json.ErrorResponse;
 import service.json.Ingredients;
 import service.json.OrderResponse;
 
@@ -21,7 +20,9 @@ public class OrderCreationTests extends AbstractOrderCreationTest {
     public void orderCreateWithTokenCheck200ResponseOnSuccess() {
         response = sendPostOrders(new Ingredients(List.of("61c0c5a71d1f82001bdaaa73","61c0c5a71d1f82001bdaaa70","61c0c5a71d1f82001bdaaa6d")), accessToken);
         compareResponseStatusCode(response,200);
-        checkSuccessfullResponseBody(response);
+        compareResponseSuccessField(response, true);
+        checkResponseBurgerNameFieldIsNotEmpty(response);
+        checkResponseBurgerOrderNumFieldIsGreaterThanZero(response);
     }
 
     @Test
@@ -30,7 +31,9 @@ public class OrderCreationTests extends AbstractOrderCreationTest {
     public void orderCreateWithoutTokenCheck200ResponseOnSuccess() {
         response = sendPostOrdersWithoutToken(new Ingredients(List.of("61c0c5a71d1f82001bdaaa6d")));
         compareResponseStatusCode(response,200);
-        checkSuccessfullResponseBody(response);
+        compareResponseSuccessField(response, true);
+        checkResponseBurgerNameFieldIsNotEmpty(response);
+        checkResponseBurgerOrderNumFieldIsGreaterThanZero(response);
     }
 
     @Test
@@ -39,7 +42,8 @@ public class OrderCreationTests extends AbstractOrderCreationTest {
     public void orderCreateCheck400ResponseWithoutIngredients() {
         response = sendPostOrders(new Ingredients(), accessToken);
         compareResponseStatusCode(response,400);
-        checkErrorResponseBody(response, "Ingredient ids must be provided");
+        compareResponseSuccessField(response, false);
+        compareResponseMessageField(response, "Ingredient ids must be provided");
     }
 
     @Test
@@ -82,20 +86,27 @@ public class OrderCreationTests extends AbstractOrderCreationTest {
         return response;
     }
 
-    // проверить поля ответа при успехе
-    @Step("Check successfull response body")
-    public void checkSuccessfullResponseBody(Response response) {
+    // проверить, что имя бургера не пустое
+    @Step("Check response burger name field is not empty")
+    public void checkResponseBurgerNameFieldIsNotEmpty(Response response) {
         OrderResponse responseBody = response.as(OrderResponse.class);
         Assert.assertFalse(responseBody.getName().isEmpty());
-        Assert.assertTrue(responseBody.getOrder().getNumber() > 0);
-        Assert.assertTrue(responseBody.isSuccess());
     }
 
-    // проверить поля ответа при ошибке
-    @Step("Check error response body")
-    public void checkErrorResponseBody(Response response, String expectedError) {
-        ErrorResponse responseBody = response.as(ErrorResponse.class);
-        Assert.assertFalse(responseBody.isSuccess());
-        Assert.assertEquals(expectedError, responseBody.getMessage());
+    // проверить, что номер заказа > 0
+    @Step("Check response burger order number field greater than zero")
+    public void checkResponseBurgerOrderNumFieldIsGreaterThanZero(Response response) {
+        OrderResponse responseBody = response.as(OrderResponse.class);
+        Assert.assertTrue(responseBody.getOrder().getNumber() > 0);
+    }
+
+    @Step("Compare response body success field")
+    public void compareResponseSuccessField(Response response, boolean expectedSuccess) {
+        Assert.assertEquals(expectedSuccess, response.path("success"));
+    }
+
+    @Step("Compare response body message field")
+    public void compareResponseMessageField(Response response, String expectedMessage) {
+        Assert.assertEquals(expectedMessage, response.path("message").toString());
     }
 }

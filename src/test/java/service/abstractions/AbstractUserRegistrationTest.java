@@ -8,6 +8,8 @@ import service.api.BurgerApi;
 import service.json.User;
 import service.utilities.TestUtilities;
 
+import static service.api.BurgerApi.sendPostAuthRegister;
+
 public class AbstractUserRegistrationTest {
     protected User user = null;
     protected Response response = null;
