@@ -1,0 +1,20 @@
+package service.json;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import java.util.List;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+public class Order {
+    private List<String> ingredients;
+    private String _id;
+    private String status;
+    private Integer number;
+    private String createdAt;
+    private String updatedAt;
+}
