@@ -1,22 +1,23 @@
 package service.json;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.util.ArrayList;
 import java.util.List;
 
+@AllArgsConstructor
+@Getter
+@Setter
 public class Ingredients {
-    List<String> ingredients;
+    private List<String> ingredients;
 
     public Ingredients() {
+        ingredients = new ArrayList<>();
     }
 
-    public Ingredients(List<String> ingredients) {
-        this.ingredients = ingredients;
-    }
-
-    public List<String> getIngredients() {
-        return ingredients;
-    }
-
-    public void setIngredients(List<String> ingredients) {
-        this.ingredients = ingredients;
+    public void addIngredient(String ingredient) {
+        ingredients.add(ingredient);
     }
 }

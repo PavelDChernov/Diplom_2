@@ -1,20 +1,20 @@
+import io.qameta.allure.Description;
 import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import jdk.jfr.Description;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import service.abstractions.AbstractTest;
+import service.api.BurgerApi;
 import service.json.User;
 
-import static io.restassured.RestAssured.given;
+import java.util.Random;
 
 @RunWith(Parameterized.class)
-public class UserRegistrationParameterizedTests {
+public class UserRegistrationParameterizedTests extends AbstractTest {
     private final User user;
     private Response response;
 
@@ -25,16 +25,30 @@ public class UserRegistrationParameterizedTests {
     @Parameterized.Parameters
     public static Object[][] dataForTest() {
         return new Object[][]{
-                { new User(null,                          "derP@r0l",   "Иннокентий")   },
-                { new User("failbox100500@qatestmail.su", null,         "Boris")        },
-                { new User("failbox500100@qatestmail.su", "derP@r0l",   null)           },
+                { new User(
+                           null,
+                        "derP@r0l",
+                           "Иннокентий"
+                          )
+                },
+                { new User(
+                            String.format("newmailbox%s@qasometestmail.su", new Random().nextInt(100500)),
+                   null,
+                      "Boris"
+                          )
+                },
+                { new User(
+                            String.format("newmailbox%s@qasometestmail.su", new Random().nextInt(100500)),
+                   "n07P@$$W0rD",
+                      null
+                          )
+                },
         };
     }
 
     @Before
     public void initTestData() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site";
-        response = sendPostAuthRegister(user);
+        sendPostAuthRegister(user);
     }
 
     @Test
@@ -47,15 +61,8 @@ public class UserRegistrationParameterizedTests {
     }
 
     @Step("Send POST /api/auth/register")
-    public Response sendPostAuthRegister(User user) {
-        Response response =
-                given()
-                        .contentType(ContentType.JSON)
-                        .and()
-                        .body(user)
-                        .when()
-                        .post("/api/auth/register");
-        return response;
+    public void sendPostAuthRegister(User user) {
+        response = BurgerApi.sendPostAuthRegister(user);
     }
 
     @Step("Compare response status code")

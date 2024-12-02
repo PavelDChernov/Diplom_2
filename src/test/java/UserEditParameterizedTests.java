@@ -1,18 +1,15 @@
 import io.qameta.allure.Description;
 import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import service.abstractions.AbstractUserEditTest;
+import service.api.BurgerApi;
 import service.json.*;
-
 import java.util.Random;
-
-import static io.restassured.RestAssured.given;
 
 @RunWith(Parameterized.class)
 public class UserEditParameterizedTests extends AbstractUserEditTest {
@@ -29,10 +26,10 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
     @Parameterized.Parameters
     public static Object[][] dataForTest() {
         return new Object[][]{
-                { String.format("newmailbox%s@qasometestmail.su", new Random().nextInt(100500)), "newPa$$w0rd1", "Парфирий" },
-                { String.format("newmailbox%s@qasometestmail.su", new Random().nextInt(100500)), null, null },
-                { null, "8nOt@pAs$w0rD8", null },
-                { null, null, "Иннокентий" },
+                { String.format("newmailbox%s@qasometestmail.su", new Random().nextInt(100500)), "newPa$$w0rd1",    "Парфирий" },
+                { String.format("newmailbox%s@qasometestmail.su", new Random().nextInt(100500)), null,              null },
+                { null,                                                                                 "8nOt@pAs$w0rD8",  null },
+                { null,                                                                                 null,              "Иннокентий" },
         };
     }
 
@@ -41,17 +38,17 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
     @Description("Endpoint returns 200 and correct response body on success, new data saved")
     public void userEditCheck200ResponseOnSuccess() {
         User newUserData = prepareNewUserData(newEmail, newPassword, newName, user);
-        response = sendPatchAuthUser(newUserData, accessToken);
+        sendPatchAuthUser(newUserData, accessToken);
         compareResponseStatusCode(response,200);
         compareResponseSuccessField(response, true);
         compareResponseUserNameField(response, newUserData.getName());
         compareResponseUserEmailField(response, newUserData.getEmail());
         if (newEmail != null || newPassword != null) {
-            response = sendPostAuthLogin(new AuthData(newUserData.getEmail(), newUserData.getPassword()));
+            sendPostAuthLogin(new AuthData(newUserData.getEmail(), newUserData.getPassword()));
             compareResponseStatusCode(response, 200);
             accessToken = getAccessToken(response);
         }
-        response = sendGetAuthUser(accessToken);
+        sendGetAuthUser(accessToken);
         compareResponseStatusCode(response,200);
         compareResponseUserNameField(response, newUserData.getName());
         compareResponseUserEmailField(response, newUserData.getEmail());
@@ -62,18 +59,18 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
     @Description("Endpoint returns 401 and correct response body on success, new data not saved")
     public void userEditCheck401ResponseOnNoToken() {
         User newUserData = prepareNewUserData(newEmail, newPassword, newName, user);
-        response = sendPatchAuthUser(newUserData, null);
+        sendPatchAuthUser(newUserData, null);
         compareResponseStatusCode(response,401);
         compareResponseSuccessField(response, false);
         compareResponseMessageField(response, "You should be authorised");
         if (newEmail != null || newPassword != null) {
-            response = sendPostAuthLogin(new AuthData(newUserData.getEmail(), newUserData.getPassword()));
+            sendPostAuthLogin(new AuthData(newUserData.getEmail(), newUserData.getPassword()));
             compareResponseStatusCode(response, 401);
-            response = sendPostAuthLogin(new AuthData(user.getEmail(), user.getPassword()));
+            sendPostAuthLogin(new AuthData(user.getEmail(), user.getPassword()));
             compareResponseStatusCode(response,200);
             accessToken = getAccessToken(response);
         }
-        response = sendGetAuthUser(accessToken);
+        sendGetAuthUser(accessToken);
         compareResponseStatusCode(response,200);
         compareResponseUserNameField(response, user.getName());
         compareResponseUserEmailField(response, user.getEmail());
@@ -101,36 +98,13 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
     }
 
     @Step("Send PATCH /api/auth/user")
-    public Response sendPatchAuthUser(User newUserData, String accessToken) {
-        if (accessToken == null) {
-            Response response =
-                    given()
-                            .contentType(ContentType.JSON)
-                            .and()
-                            .body(newUserData)
-                            .when()
-                            .patch("/api/auth/user");
-            return response;
-        }
-        Response response =
-                given()
-                        .header("authorization", accessToken)
-                        .and()
-                        .contentType(ContentType.JSON)
-                        .and()
-                        .body(newUserData)
-                        .when()
-                        .patch("/api/auth/user");
-        return response;
+    public void sendPatchAuthUser(User newUserData, String accessToken) {
+        response = BurgerApi.sendPatchAuthUser(newUserData, accessToken);
     }
 
     @Step("Send GET /api/auth/user")
-    public Response sendGetAuthUser(String accessToken) {
-        Response response =
-                given()
-                        .header("authorization", accessToken)
-                        .get("/api/auth/user");
-        return response;
+    public void sendGetAuthUser(String accessToken) {
+        response = BurgerApi.sendGetAuthUser(accessToken);
     }
 
     @Step("Compare response user name field")
@@ -154,15 +128,8 @@ public class UserEditParameterizedTests extends AbstractUserEditTest {
     }
 
     @Step("Send POST /api/auth/login")
-    public Response sendPostAuthLogin(AuthData authData) {
-        Response response =
-                given()
-                        .contentType(ContentType.JSON)
-                        .and()
-                        .body(authData)
-                        .when()
-                        .post("/api/auth/login");
-        return response;
+    public void sendPostAuthLogin(AuthData authData) {
+        response = BurgerApi.sendPostAuthLogin(authData);
     }
 
     // получить токен авторизации из ответа

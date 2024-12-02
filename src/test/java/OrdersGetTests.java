@@ -1,28 +1,27 @@
 import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.Response;
-import jdk.jfr.Description;
+import io.qameta.allure.Description;
 import org.junit.Assert;
 import org.junit.Test;
 import service.abstractions.AbstractOrdersGetTest;
+import service.api.BurgerApi;
 import service.json.Ingredients;
 import service.json.Order;
 import service.json.OrdersResponse;
-
-import static io.restassured.RestAssured.given;
 
 public class OrdersGetTests extends AbstractOrdersGetTest {
     @Test
     @DisplayName("Check status code and response body of POST /api/orders (with token) on success")
     @Description("Endpoint returns 200 and correct response body on success")
     public void orderGetWithTokenCheck200ResponseOnSuccess() {
-        response = sendGetOrders(accessToken);
+        sendGetOrders(accessToken);
         compareResponseStatusCode(response,200);
         compareResponseSuccessField(response, true);
         checkResponseTotalFieldIsGreaterThanZero(response);
         checkResponseTotalTodayFieldIsGreaterThanZero(response);
         compareResponseOrdersFieldSize(response, ORDERS_NUM);
-        compareResponseOrdersFieldIngredients(response, INGREDIENTS);
+        compareResponseOrdersFieldIngredients(response, ingredients);
         checkResponseOrdersFieldOrder_idAreNotEmpty(response);
         checkResponseOrdersFieldOrderStatusAreNotEmpty(response);
         checkResponseOrdersFieldOrderNumberAreGreaterThanZero(response);
@@ -34,25 +33,15 @@ public class OrdersGetTests extends AbstractOrdersGetTest {
     @DisplayName("Check status code and response body of POST /api/orders (without token)")
     @Description("Endpoint returns 401 and correct response body without token")
     public void orderGetWithoutTokenCheck401ResponseOnSuccess() {
-        response = sendGetOrders(null);
+        sendGetOrders(null);
         compareResponseStatusCode(response,401);
         compareResponseSuccessField(response, false);
         compareResponseMessageField(response, "You should be authorised");
     }
 
     @Step("Send GET /api/orders")
-    public Response sendGetOrders(String accessToken) {
-        if (accessToken == null) {
-            Response response =
-                    given()
-                            .get("/api/orders");
-            return response;
-        }
-        Response response =
-                given()
-                        .header("authorization", accessToken)
-                        .get("/api/orders");
-        return response;
+    public void sendGetOrders(String accessToken) {
+        response = BurgerApi.sendGetOrders(accessToken);
     }
 
     @Step("Compare response status code")
@@ -138,7 +127,4 @@ public class OrdersGetTests extends AbstractOrdersGetTest {
     public void compareResponseMessageField(Response response, String expectedMessage) {
         Assert.assertEquals(expectedMessage, response.path("message").toString());
     }
-
-
-
 }

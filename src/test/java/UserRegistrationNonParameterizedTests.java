@@ -1,8 +1,7 @@
 import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import jdk.jfr.Description;
+import io.qameta.allure.Description;
 import org.junit.Assert;
 import org.junit.Test;
 import service.abstractions.AbstractUserRegistrationTest;
@@ -11,14 +10,12 @@ import service.json.AuthorizedUserData;
 import service.json.User;
 import service.utilities.TestUtilities;
 
-import static io.restassured.RestAssured.given;
-
 public class UserRegistrationNonParameterizedTests extends AbstractUserRegistrationTest {
     @Test
     @DisplayName("Check status code and response body of POST /api/auth/register on success")
     @Description("Endpoint returns 200 and correct response body on success")
     public void userRegistrationCheck200ResponseOnSuccess() {
-        response = sendPostAuthRegister(user);
+        sendPostAuthRegister(user);
         compareResponseStatusCode(response,200);
         compareResponseSuccessField(response, true);
         checkResponseAccessTokenFieldNotEmpty(response);
@@ -35,22 +32,15 @@ public class UserRegistrationNonParameterizedTests extends AbstractUserRegistrat
         response = BurgerApi.sendPostAuthRegister(user);
         TestUtilities.compareResponseStatusCode(response,200);
         // тест
-        response = sendPostAuthRegister(user);
+        sendPostAuthRegister(user);
         compareResponseStatusCode(response,403);
         compareResponseSuccessField(response, false);
         compareResponseMessageField(response, "User already exists");
     }
 
     @Step("Send POST /api/auth/register")
-    public Response sendPostAuthRegister(User user) {
-        Response response =
-                given()
-                        .contentType(ContentType.JSON)
-                        .and()
-                        .body(user)
-                        .when()
-                        .post("/api/auth/register");
-        return response;
+    public void sendPostAuthRegister(User user) {
+        response = BurgerApi.sendPostAuthRegister(user);
     }
 
     @Step("Compare response status code")

@@ -1,6 +1,5 @@
 package service.abstractions;
 
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.junit.After;
 import org.junit.Before;
@@ -8,15 +7,12 @@ import service.api.BurgerApi;
 import service.json.User;
 import service.utilities.TestUtilities;
 
-import static service.api.BurgerApi.sendPostAuthRegister;
-
-public class AbstractUserRegistrationTest {
-    protected User user = null;
-    protected Response response = null;
+public class AbstractUserRegistrationTest extends AbstractTest {
+    protected User user;
+    protected Response response;
 
     @Before
     public void initTestData() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site";
         user = TestUtilities.getNewUser();
     }
 
@@ -28,8 +24,6 @@ public class AbstractUserRegistrationTest {
                 String accessToken = TestUtilities.getAccessToken(response);
                 BurgerApi.sendDeleteAuthUser(accessToken);
             }
-            user = null;
-            response = null;
         }
     }
 }

@@ -1,6 +1,5 @@
 package service.abstractions;
 
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.junit.After;
 import org.junit.Before;
@@ -8,25 +7,26 @@ import service.api.BurgerApi;
 import service.json.Ingredients;
 import service.json.User;
 import service.utilities.TestUtilities;
+import java.util.Random;
 
-import java.util.List;
+public class AbstractOrdersGetTest extends AbstractTest {
+    protected static final int ORDERS_NUM = 2;
+    protected static final int MAX_INGREDIENTS = 5;
 
-public class AbstractOrdersGetTest {
-    protected final Ingredients INGREDIENTS = new Ingredients(List.of("61c0c5a71d1f82001bdaaa73", "61c0c5a71d1f82001bdaaa70", "61c0c5a71d1f82001bdaaa6d"));
-    protected final int ORDERS_NUM = 1;
-    protected User user = null;
-    protected String accessToken = null;
-    protected Response response = null;
+    protected User user;
+    protected String accessToken;
+    protected Response response;
+    protected Ingredients ingredients;
 
     @Before
     public void initTestData() {
-        RestAssured.baseURI = "https://stellarburgers.nomoreparties.site";
+        ingredients = TestUtilities.getNewIngredientsList(new Random().nextInt(MAX_INGREDIENTS) + 1);
         user = TestUtilities.getNewUser();
         response = BurgerApi.sendPostAuthRegister(user);
         TestUtilities.compareResponseStatusCode(response, 200);
         accessToken = TestUtilities.getAccessToken(response);
         for (int i = 0; i < ORDERS_NUM; i++) {
-            response = BurgerApi.sendPostOrders(INGREDIENTS, accessToken);
+            response = BurgerApi.sendPostOrders(ingredients, accessToken);
             TestUtilities.compareResponseStatusCode(response, 200);
         }
     }
@@ -37,8 +37,5 @@ public class AbstractOrdersGetTest {
         if (accessToken != null) {
             BurgerApi.sendDeleteAuthUser(accessToken);
         }
-        user = null;
-        accessToken = null;
-        response = null;
     }
 }

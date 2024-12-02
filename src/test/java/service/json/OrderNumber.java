@@ -1,20 +1,14 @@
 package service.json;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
 public class OrderNumber {
     private Integer number;
-
-    public OrderNumber() {
-    }
-
-    public OrderNumber(Integer number) {
-        this.number = number;
-    }
-
-    public Integer getNumber() {
-        return number;
-    }
-
-    public void setNumber(Integer number) {
-        this.number = number;
-    }
 }

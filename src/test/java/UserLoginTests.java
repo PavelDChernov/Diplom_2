@@ -1,22 +1,20 @@
 import io.qameta.allure.Step;
 import io.qameta.allure.junit4.DisplayName;
-import io.restassured.http.ContentType;
 import io.restassured.response.Response;
-import jdk.jfr.Description;
+import io.qameta.allure.Description;
 import org.junit.Assert;
 import org.junit.Test;
 import service.abstractions.AbstractUserLoginTest;
+import service.api.BurgerApi;
 import service.json.AuthData;
 import service.json.AuthorizedUserData;
-
-import static io.restassured.RestAssured.given;
 
 public class UserLoginTests extends AbstractUserLoginTest {
     @Test
     @DisplayName("Check status code and response body of POST /api/auth/login on success")
     @Description("Endpoint returns 200 and correct response body on success")
     public void userLoginCheck200ResponseOnSuccess() {
-        response = sendPostAuthLogin(authData);
+        sendPostAuthLogin(authData);
         compareResponseStatusCode(response,200);
         compareResponseSuccessField(response, true);
         checkResponseAccessTokenFieldNotEmpty(response);
@@ -29,7 +27,7 @@ public class UserLoginTests extends AbstractUserLoginTest {
     @DisplayName("Check status code and response body of POST /api/auth/login on incorrect email")
     @Description("Endpoint returns 401 and correct response body if incorrect email provided on login")
     public void userLoginCheck401ResponseOnIncorrectEmail() {
-        response = sendPostAuthLogin(new AuthData("a1" + authData.getEmail(), authData.getPassword()));
+        sendPostAuthLogin(new AuthData("a1" + authData.getEmail(), authData.getPassword()));
         compareResponseStatusCode(response,401);
         compareResponseSuccessField(response, false);
         compareResponseMessageField(response, "email or password are incorrect");
@@ -39,7 +37,7 @@ public class UserLoginTests extends AbstractUserLoginTest {
     @DisplayName("Check status code and response body of POST /api/auth/login on incorrect password")
     @Description("Endpoint returns 401 and correct response body if incorrect password provided on login")
     public void userLoginCheck401ResponseOnIncorrectPassword() {
-        response = sendPostAuthLogin(new AuthData(authData.getEmail(), authData.getPassword() + "Z9"));
+        sendPostAuthLogin(new AuthData(authData.getEmail(), authData.getPassword() + "Z9"));
         compareResponseStatusCode(response,401);
         compareResponseSuccessField(response, false);
         compareResponseMessageField(response, "email or password are incorrect");
@@ -51,15 +49,8 @@ public class UserLoginTests extends AbstractUserLoginTest {
     }
 
     @Step("Send POST /api/auth/login")
-    public Response sendPostAuthLogin(AuthData authData) {
-        Response response =
-                given()
-                        .contentType(ContentType.JSON)
-                        .and()
-                        .body(authData)
-                        .when()
-                        .post("/api/auth/login");
-        return response;
+    public void sendPostAuthLogin(AuthData authData) {
+        response = BurgerApi.sendPostAuthLogin(authData);
     }
 
      // проверить, что передан accessToken
